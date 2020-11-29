@@ -1,6 +1,6 @@
 % Plot Functions
 classdef plotFunctions
-    properties %Input Properties
+    properties (Access = public)%Input Properties
         model
         XQuantity
         YQuantity
@@ -32,6 +32,7 @@ classdef plotFunctions
             if opensimlib == 0
                 import org.opensim.modeling.*
             end
+            import org.opensim.modeling.*
             % Syntax of input arguments
             % arg 1 model should be a "org.opensim.modeling.Model" java Object
             % arg 2 sto should be a "org.opensim.modeling.Storage" java
@@ -43,14 +44,14 @@ classdef plotFunctions
                     n = 1;
                     for i = 0:model.getCoordinateSet.getSize-1
                         if model.getCoordinateSet.get(i).isDependent(obj.state) == 0 % Iterate through all non-dependent coord
-                            cSet{n,1} = char(model.getCoordinateSet.get(i).getName);
+                            cSet{1,n} = char(model.getCoordinateSet.get(i).getName);
                             n = n+1;
                         end
                     end
                     obj.cSet = cSet;
                     n= 1;
                     for i = 0:model.getMuscles.getSize-1
-                        mSet{n,1} = char(model.getMuscles.get(i).getName);
+                        mSet{1,n} = char(model.getMuscles.get(i).getName);
                         n=n+1;
                     end
                     obj.mSet = mSet;
@@ -203,6 +204,51 @@ classdef plotFunctions
             % OR (name of motion object (mot.getName) OR 'time') if STO object is added. 
             % if YQuantity is a motion quantity i.e. pelvis rotation, 
             % XQuantity cannot be name of motion object
+        end
+        function bool = checkInputArg(varargs)
+            function bool = checkModelArg(model)
+                % Input validation 
+                % model must be a java object with the name
+                % "org.opensim.modeling.Model"
+                bool = 0;
+                if isjava(model)
+                    if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model')
+                        bool = 1;
+                    end
+                end
+            end
+            function bool = checkMotionArg(motion)
+                % Input validation 
+                % model must be a java object with the name
+                % "org.opensim.modeling.storage"
+                bool = 0;
+                if isjava(motion)
+                    if strcmp(char(motion.getClass.getName),'org.opensim.modeling.Storage')
+                        bool = 1;
+                    end
+                end
+            end
+            function bool = checkYQuantityArg(YQuantity, casenum)
+                % Input validation 
+                % Model must be a string.
+                % Case 1: Motion is loaded
+                % Valid input == ValidY OR Coord OR Time
+                % Case 2: Motion is not loaded
+                % Valid input == ValidY
+                if isstring(YQuantity)
+                    if casenum == 1
+                        
+                        locValidY = obj.ValidY
+                    elseif casenum == 2
+                    end
+                end
+            end
+            function bool = checkCoordArg(coord,narg)
+            end
+            function bool = checkMusclesArg(muscles,narg)
+            end
+            function bool = checkXQuantityArg(XQuantity,narg)
+            end
         end
     end
 end
