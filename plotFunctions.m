@@ -16,6 +16,9 @@ classdef plotFunctions
     properties (Constant) % List of internal values
         %List of valid YQuantity values
         ValidY = {'moment arm','moment','muscle-tendon length','fiber-length','tendon-length','normalized fiber-length','tendon force','active fiber-force','passive fiber-force','total fiber-force'};
+        
+    end
+    properties (Constant) % Error Messages)
         InputError = "Invalid input arguments"; % Error message in case of invalid input argument
     end
     methods
@@ -205,7 +208,27 @@ classdef plotFunctions
             % if YQuantity is a motion quantity i.e. pelvis rotation, 
             % XQuantity cannot be name of motion object
         end
-        function bool = checkInputArg(varargs)
+        function bool = checkInputArg(varargin)
+            % Case 1: args = (model,YQuantity (not moment or moment arm), 
+            % muscle array, XQuantity) nargs=4
+            % Case 2: args = (model,YQuantity (moment or moment arm), coord, 
+            % muscle array, XQuantity) nargs=5 
+            % Case 3: args = (model, motion, YQuantity (as coord),
+            % XQuantity) nargin = 4
+            bool = 0;
+            if nargin == 4
+                % Case 1 or 3
+                % Test for 1 or 3
+                if not(isjava(varargin{2})) && iscellstr(varargin{end-1})
+                    % Case 1
+                else
+                    % Case 3
+                end
+            elseif nargin == 5
+                % Case 2
+            else
+                return
+            end
             function bool = checkModelArg(model)
                 % Input validation 
                 % model must be a java object with the name
@@ -214,7 +237,11 @@ classdef plotFunctions
                 if isjava(model)
                     if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model')
                         bool = 1;
+                    else
+                        return
                     end
+                else
+                    return
                 end
             end
             function bool = checkMotionArg(motion)
@@ -225,29 +252,93 @@ classdef plotFunctions
                 if isjava(motion)
                     if strcmp(char(motion.getClass.getName),'org.opensim.modeling.Storage')
                         bool = 1;
+                    else
+                        return
                     end
+                else
+                    return
                 end
             end
             function bool = checkYQuantityArg(YQuantity, casenum)
                 % Input validation 
-                % Model must be a string.
+                % YQuantity must be a character array.
                 % Case 1: Motion is loaded
                 % Valid input == ValidY OR Coord OR Time
                 % Case 2: Motion is not loaded
                 % Valid input == ValidY
-                if isstring(YQuantity)
+                bool = 0;
+                if ischar(YQuantity)
                     if casenum == 1
-                        
-                        locValidY = obj.ValidY
+                        locValidY = [obj.ValidY obj.coord {'time'}];
                     elseif casenum == 2
+                        locValidY = obj.ValidY;
+                    end
+                else
+                    return
+                end
+                for i = 1:size(locValidY)
+                    if YQuantity == locValidY{i}
+                        bool = 1;
+                        break
                     end
                 end
             end
-            function bool = checkCoordArg(coord,narg)
+            function bool = checkCoordArg(coord)
+                % Input validation 
+                % coord must be a character array.
+                % Case 1: Motion is loaded
+                % Valid input == Coord
+                bool = 0;
+                if ischar(coord)
+                    loccoord = [obj.coord];
+                else
+                    return
+                end
+                for i = 1:size(loccoord)
+                    if coord == loccoord{i}
+                        bool = 1;
+                        break
+                    end
+                end
             end
-            function bool = checkMusclesArg(muscles,narg)
+            function bool = checkMusclesArg(muscles)
+                % Input validation 
+                % muscle must be a cell array of character array.
+                bool = 0;
+                if not(iscellstr(muscle))
+                    return
+                end
+                for i = 1:size(obj.muscles)
+                    if not(muscles == obj.muscles{i})
+                        return
+                    end
+                end
+                bool =1;
+                
             end
-            function bool = checkXQuantityArg(XQuantity,narg)
+            function bool = checkXQuantityArg(XQuantity,casenum)
+                % Input validation 
+                % XQuantity must be a character array.
+                % Case 1: YQuantity is coord
+                % Valid input == Coord OR Time
+                % Case 2: YQuantity is not coord
+                % Valid input == Coord
+                bool = 0;
+                if ischar(XQuantity)
+                    if casenum == 1
+                        locValidX = [obj.coord];
+                    elseif casenum == 2
+                        locValidX = [obj.coord {'time'}];
+                    end
+                else
+                    return
+                end
+                for i = 1:size(locValidX)
+                    if XQuantity == locValidX{i}
+                        bool = 1;
+                        break
+                    end
+                end
             end
         end
     end
