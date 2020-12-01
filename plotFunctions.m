@@ -11,7 +11,6 @@ classdef plotFunctions
     properties %Properties from Input objects
         cSet % List of non-dependent coordinates
         mSet % List of muscles
-        state
     end
     properties (Constant) % List of internal values
         %List of valid YQuantity values
@@ -22,68 +21,68 @@ classdef plotFunctions
         InputError = "Invalid input arguments"; % Error message in case of invalid input argument
     end
     methods
-        function obj = plotFunctions(model,varargin) % Importing model for initial set up
-            % Search for OpenSim Library and load if missing
-            L = import;
-            opensimlib = 0;
-            for k = 1:size(L)
-                if L{k} == "org.opensim.modeling.*"
-                    opensimlib = 1;
-                    break;
-                end
-            end
-            if opensimlib == 0
-                import org.opensim.modeling.*
-            end
-            import org.opensim.modeling.*
-            % Syntax of input arguments
-            % arg 1 model should be a "org.opensim.modeling.Model" java Object
-            % arg 2 sto should be a "org.opensim.modeling.Storage" java
-            % Object (optional argument)
-            if nargin == 1
-                if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model')
-                    obj.model = model;
-                    obj.state = model.initSystem();
-                    n = 1;
-                    for i = 0:model.getCoordinateSet.getSize-1
-                        if model.getCoordinateSet.get(i).isDependent(obj.state) == 0 % Iterate through all non-dependent coord
-                            cSet{1,n} = char(model.getCoordinateSet.get(i).getName);
-                            n = n+1;
-                        end
-                    end
-                    obj.cSet = cSet;
-                    n= 1;
-                    for i = 0:model.getMuscles.getSize-1
-                        mSet{1,n} = char(model.getMuscles.get(i).getName);
-                        n=n+1;
-                    end
-                    obj.mSet = mSet;
-                else
-                    disp(obj.InputError)
-                end
-            elseif nargin == 2
-                if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model') && strcmp(char(varargin{1}.getClass.getName),'org.opensim.modeling.Storage')
-                    obj.model = model;
-                    obj.motion = varargin{1};
-                    obj.state = model.initSystem();
-                    n = 1;
-                    for i = 0:model.getCoordinateSet.getSize-1
-                        if model.getCoordinateSet.get(i).isDependent(obj.state) == 0 % Iterate through all non-dependent coord
-                            cSet{n} = char(model.getCoordinateSet.get(i).getName);
-                            n = n+1;
-                        end
-                    end
-                    obj.cSet = cSet;
-                    for i = 0:model.getMuscles.getSize-1
-                        mSet{n} = char(model.getMuscles.get(i).getName);
-                    end
-                    obj.mSet = mSet;
-                else
-                    disp(obj.InputError)
-                end
-            else
-                disp(obj.InputError)
-            end            
+        function obj = plotFunctions() % Importing model for initial set up
+%             % Search for OpenSim Library and load if missing
+%             L = import;
+%             opensimlib = 0;
+%             for k = 1:size(L)
+%                 if L{k} == "org.opensim.modeling.*"
+%                     opensimlib = 1;
+%                     break;
+%                 end
+%             end
+%             if opensimlib == 0
+%                 import org.opensim.modeling.*
+%             end
+%             import org.opensim.modeling.*
+%             % Syntax of input arguments
+%             % arg 1 model should be a "org.opensim.modeling.Model" java Object
+%             % arg 2 sto should be a "org.opensim.modeling.Storage" java
+%             % Object (optional argument)
+%             if nargin == 1
+%                 if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model')
+%                     obj.model = model;
+%                     obj.state = model.initSystem();
+%                     n = 1;
+%                     for i = 0:model.getCoordinateSet.getSize-1
+%                         if model.getCoordinateSet.get(i).isDependent(obj.state) == 0 % Iterate through all non-dependent coord
+%                             cSet{1,n} = char(model.getCoordinateSet.get(i).getName);
+%                             n = n+1;
+%                         end
+%                     end
+%                     obj.cSet = cSet;
+%                     n= 1;
+%                     for i = 0:model.getMuscles.getSize-1
+%                         mSet{1,n} = char(model.getMuscles.get(i).getName);
+%                         n=n+1;
+%                     end
+%                     obj.mSet = mSet;
+%                 else
+%                     disp(obj.InputError)
+%                 end
+%             elseif nargin == 2
+%                 if strcmp(char(model.getClass.getName),'org.opensim.modeling.Model') && strcmp(char(varargin{1}.getClass.getName),'org.opensim.modeling.Storage')
+%                     obj.model = model;
+%                     obj.motion = varargin{1};
+%                     obj.state = model.initSystem();
+%                     n = 1;
+%                     for i = 0:model.getCoordinateSet.getSize-1
+%                         if model.getCoordinateSet.get(i).isDependent(obj.state) == 0 % Iterate through all non-dependent coord
+%                             cSet{n} = char(model.getCoordinateSet.get(i).getName);
+%                             n = n+1;
+%                         end
+%                     end
+%                     obj.cSet = cSet;
+%                     for i = 0:model.getMuscles.getSize-1
+%                         mSet{n} = char(model.getMuscles.get(i).getName);
+%                     end
+%                     obj.mSet = mSet;
+%                 else
+%                     disp(obj.InputError)
+%                 end
+%             else
+%                 disp(obj.InputError)
+%             end            
         end
         function obj = setYQuantity(YQuantity,varargin)
             % arg 1 YQuantity should be char array e.g. 'fiber-length'
@@ -221,8 +220,60 @@ classdef plotFunctions
                 % Test for 1 or 3
                 if not(isjava(varargin{2})) && iscellstr(varargin{end-1})
                     % Case 1
+                    model_arg = varargin{1};
+                    motion_arg = varargin{2};
+                    YCase = setYCase();
+                    XCase = setXCase();
+                    YQuantity_arg = varargin{3};
+                    XQuantity_arg = varargin{4};
+                    if checkModelArg(model_arg) == 1
+                        setModel(model_arg)
+                    else
+                        return
+                    end
+                    if checkMotionArg(motion_arg) == 1
+                        setMotion(motion_arg)
+                    else
+                        return
+                    end
+                    if checkYQuantityArg(YQuantity_arg, YCase) == 1
+                        setYQuantity(YQuantity_arg)
+                    else
+                        return
+                    end
+                    if checkXQuantityArg(XQuantity_arg,XCase) == 1
+                        setXQuantity(XQuantity_arg)
+                    else
+                        return
+                    end
                 else
                     % Case 3
+                    model_arg = varargin{1};
+                    YCase = setYCase();
+                    XCase = setXCase();
+                    YQuantity_arg = varargin{2};
+                    muscle_arg = varargin{3};
+                    XQuantity_arg = varargin{4};
+                    if checkModelArg(model_arg) == 1
+                        setModel(model_arg)
+                    else
+                        return
+                    end
+                    if checkYQuantityArg(YQuantity_arg, YCase) == 1
+                        setYQuantity(YQuantity_arg)
+                    else
+                        return
+                    end
+                    if checkMusclesArg(muscle_arg)
+                        setMuscle(muscle_arg)
+                    else
+                        return
+                    end
+                    if checkXQuantityArg(XQuantity_arg,XCase) == 1
+                        setXQuantity(XQuantity_arg)
+                    else
+                        return
+                    end
                 end
             elseif nargin == 5
                 % Case 2
@@ -340,6 +391,165 @@ classdef plotFunctions
                     end
                 end
             end
+        end
+        function genPlot()
+            function [XMin,XMax] = genPlotXRange(coord)
+                XMin = coord.get(obj.XQuantity).getRangeMin();
+                XMax = coord.get(obj.XQuantity).getRangeMax();
+            end
+            function genPlotMomentArm()
+            end
+            function genPlotMoment()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getFiberLength(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function genPlotMuscleTendonLength()
+                % Incomplete
+            end
+            function plotpoints = genPlotFiberLength()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getFiberLength(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotTendonLength()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getTendonLength(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotNormalisedFiberLength()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getNormalizedFiberLength(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotTendonForce()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getTendonForce(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotActiveFiberForce()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getActiveFiberForce(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotPassiveFiberForce()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getPassiveFiberForce(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function plotpoints = genPlotTotalFiberForce()
+                temp_model = obj.model;
+                temp_state = obj.model.initSystem();
+                temp_coord = temp_model.getCoordinateSet();
+                [coord_min,coord_max] = genPlotXRange(temp_coord.get(obj.XQuantity));
+                plotpoints = zeros(size(coord_min:0.001:coord_max),size(obj.muscles)+1);
+                n = 1;
+                for i = coord_min:0.001:coord_max
+                    temp_model.updCoordinateSet().get(obj.XQuantity).setValue(temp_state,i)
+                    temp_model.equilibrateMuscles(temp_state)
+                    temp_model.realizePosition(temp_state)
+                    plotpoints(n,1) = i;
+                    for j = 1:size(obj.muscles)
+                        plotpoints(n,j+1) = temp_model.getMuscles.get(obj.muscles(j)).getFiberForce(temp_state);
+                    end
+                    n = n+1;
+                end
+            end
+            function genPlotMotion()
+                % Incomplete
+            end
+               
         end
     end
 end
